@@ -5,6 +5,8 @@ require('dotenv').config();
 
 const authRoutes = require('./routes/authRoutes');
 const accountRoutes = require('./routes/accountRoutes');
+const transactionRoutes = require('./routes/transactionRoutes');
+const reportRoutes = require('./routes/reportRoutes');
 
 const app = express();
 
@@ -16,6 +18,8 @@ app.use(morgan('dev')); // Logger middleware for cleanly tracking incoming API r
 // Routes Mapping
 app.use('/api/auth', authRoutes);
 app.use('/api/account', accountRoutes);
+app.use('/api/transaction', transactionRoutes);
+app.use('/api/report', reportRoutes);
 
 // Simple root status indicator endpoint
 app.get('/', (req, res) => {
