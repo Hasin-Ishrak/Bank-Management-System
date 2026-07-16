@@ -1,19 +1,41 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const accountController = require('../controllers/accountController');
-const { verifyToken, authorizeRoles } = require('../middlewares/authMiddleware');
 
-// All profile/account routes require a valid logged-in session
-router.use(verifyToken);
+const accountController = require("../controllers/accountController");
+const {
+  verifyToken,
+  authorizeRoles,
+} = require("../middleware/auth");
 
-// Create account (Restricted to Bank Administrators and Employees)
-router.post('/create', authorizeRoles('Employee'), accountController.createAccount);
+// Customer/Admin/Employee
+router.get(
+  "/me",
+  verifyToken,
+  accountController.getAccountDetails
+);
 
-// Get current logged-in customer's profile details or pass specific target user via parameters
-router.get('/profile', accountController.getAccountDetails);
-router.get('/profile/:userId', authorizeRoles('Admin', 'Employee'), accountController.getAccountDetails);
+// Admin/Employee
+router.get(
+  "/:userId",
+  verifyToken,
+  authorizeRoles("Admin", "Employee"),
+  accountController.getAccountDetails
+);
 
-// Deactivate an account (Admin only control)
-router.put('/deactivate/:accountNumber', authorizeRoles('Admin'), accountController.deactivateAccount);
+// Admin/Employee
+router.post(
+  "/",
+  verifyToken,
+  authorizeRoles("Admin", "Employee"),
+  accountController.createAccount
+);
+
+// Admin/Employee
+router.put(
+  "/deactivate/:accountNumber",
+  verifyToken,
+  authorizeRoles("Admin", "Employee"),
+  accountController.deactivateAccount
+);
 
 module.exports = router;

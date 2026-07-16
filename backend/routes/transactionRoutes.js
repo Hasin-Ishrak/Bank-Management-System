@@ -1,31 +1,45 @@
 const express = require("express");
 const router = express.Router();
+
 const transactionController = require("../controllers/transactionController");
 const {
   verifyToken,
   authorizeRoles,
-} = require("../middlewares/authMiddleware");
+} = require("../middleware/auth");
 
-// All transactions require standard session login validation
-router.use(verifyToken);
-
-// Customer endpoints (or Employees acting on behalf of customers)
-router.post(
-  "/transfer",
-  authorizeRoles("Customer", "Employee"),
-  transactionController.transfer,
-);
-
-// Employee manual terminal overrides (Deposits & Withdrawals over the counter)
+// Customer/Admin/Employee
 router.post(
   "/deposit",
-  authorizeRoles("Customer", "Employee"),
-  transactionController.deposit,
+  verifyToken,
+  transactionController.deposit
 );
+
 router.post(
   "/withdraw",
-  authorizeRoles("Customer", "Employee"),
-  transactionController.withdraw,
+  verifyToken,
+  transactionController.withdraw
+);
+
+router.post(
+  "/transfer",
+  verifyToken,
+  transactionController.transfer
+);
+
+// Customer
+router.get(
+  "/history",
+  verifyToken,
+  authorizeRoles("Customer"),
+  transactionController.getMyTransactions
+);
+
+// Admin / Employee
+router.get(
+  "/all",
+  verifyToken,
+  authorizeRoles("Admin", "Employee"),
+  transactionController.getAllTransactions
 );
 
 module.exports = router;

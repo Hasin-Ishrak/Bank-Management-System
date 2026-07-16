@@ -1,17 +1,47 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const reportController = require('../controllers/reportController');
-const { verifyToken, authorizeRoles } = require('../middlewares/authMiddleware');
 
-router.use(verifyToken);
+const reportController = require("../controllers/reportController");
+const {
+  verifyToken,
+  authorizeRoles,
+} = require("../middleware/auth");
 
-// Customer Loan Application portal
-router.post('/loans/apply', authorizeRoles('Customer'), reportController.applyForLoan);
+// Customer
+router.post(
+  "/loan",
+  verifyToken,
+  authorizeRoles("Customer"),
+  reportController.applyForLoan
+);
 
-// Admin Loan Approvals panel
-router.put('/loans/:loanId/status', authorizeRoles('Admin'), reportController.updateLoanStatus);
+router.get(
+  "/loan/me",
+  verifyToken,
+  authorizeRoles("Customer"),
+  reportController.getMyLoans
+);
 
-// Global Analytical Reporting dashboard dataset (Admins & Employees privilege)
-router.get('/dashboard/metrics', authorizeRoles('Admin', 'Employee'), reportController.getSystemReports);
+// Admin / Employee
+router.get(
+  "/loan",
+  verifyToken,
+  authorizeRoles("Admin", "Employee"),
+  reportController.getAllLoans
+);
+
+router.put(
+  "/loan/:loanId",
+  verifyToken,
+  authorizeRoles("Admin", "Employee"),
+  reportController.updateLoanStatus
+);
+
+router.get(
+  "/system",
+  verifyToken,
+  authorizeRoles("Admin"),
+  reportController.getSystemReports
+);
 
 module.exports = router;
