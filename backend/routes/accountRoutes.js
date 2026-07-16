@@ -7,7 +7,7 @@ const { verifyToken, authorizeRoles } = require('../middlewares/authMiddleware')
 router.use(verifyToken);
 
 // Create account (Restricted to Bank Administrators and Employees)
-router.post('/create', authorizeRoles('Admin', 'Employee'), accountController.createAccount);
+router.post('/create', authorizeRoles('Employee'), accountController.createAccount);
 
 // Get current logged-in customer's profile details or pass specific target user via parameters
 router.get('/profile', accountController.getAccountDetails);

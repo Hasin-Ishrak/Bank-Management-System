@@ -19,12 +19,12 @@ router.post(
 // Employee manual terminal overrides (Deposits & Withdrawals over the counter)
 router.post(
   "/deposit",
-  authorizeRoles("Customer", "Employee", "Admin"),
+  authorizeRoles("Customer", "Employee"),
   transactionController.deposit,
 );
 router.post(
   "/withdraw",
-  authorizeRoles("Customer", "Employee", "Admin"),
+  authorizeRoles("Customer", "Employee"),
   transactionController.withdraw,
 );
 

@@ -4,38 +4,48 @@ const jwt = require('jsonwebtoken');
 
 // 1. Register User
 exports.register = async (req, res) => {
-    const { username, password, role } = req.body;
+    const { username, password } = req.body;
 
-    if (!username || !password || !role) {
-        return res.status(400).json({ message: 'Please provide username, password, and role.' });
-    }
-
-    // Restrict registration values to matching schema definitions
-    if (!['Customer', 'Employee', 'Admin'].includes(role)) {
-        return res.status(400).json({ message: 'Invalid role specified.' });
+    if (!username || !password) {
+        return res.status(400).json({
+            message: 'Please provide username and password.'
+        });
     }
 
     try {
         // Check if username already exists
-        const [existingUser] = await db.query('SELECT * FROM users WHERE username = ?', [username]);
+        const [existingUser] = await db.query(
+            'SELECT * FROM users WHERE username = ?',
+            [username]
+        );
+
         if (existingUser.length > 0) {
-            return res.status(409).json({ message: 'Username is already taken.' });
+            return res.status(409).json({
+                message: 'Username is already taken.'
+            });
         }
 
-        // Hash the password
+        // Hash password
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-        // Insert new user into database
+        // Default role for every new user
+        const role = 'Customer';
+
+        // Insert user
         await db.query(
             'INSERT INTO users (username, password, role) VALUES (?, ?, ?)',
             [username, hashedPassword, role]
         );
 
-        res.status(201).json({ message: 'User registered successfully.' });
+        res.status(201).json({
+            message: 'User registered successfully.'
+        });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Internal server error.' });
+        res.status(500).json({
+            message: 'Internal server error.'
+        });
     }
 };
 
