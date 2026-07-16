@@ -7,8 +7,9 @@ import { useAuth } from '../../hooks/useAuth';
 export default function LoginPage() {
     const { login } = useAuth();
 
-    const [username, setUsername] = useState('');
+    const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
+
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
@@ -18,7 +19,7 @@ export default function LoginPage() {
         setError('');
         setSubmitting(true);
 
-        const result = await login(username, password);
+        const result = await login(phone, password);
 
         if (!result.success) {
             setError(result.message);
@@ -27,77 +28,91 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-100 px-4">
-            <div className="w-full max-w-md space-y-8 rounded-xl bg-white p-8 shadow-md">
-                <div className="text-center">
-                    <h2 className="text-3xl font-extrabold text-gray-900">
-                        Secure Core Login
-                    </h2>
+        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-green-950 via-green-900 to-emerald-900 px-4">
+            <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
+                <div className="mb-8 text-center">
+                    <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-green-900 text-3xl text-white shadow-lg">
+                        🏦
+                    </div>
+
+                    <h1 className="text-3xl font-bold text-green-900">
+                        Bank Management System
+                    </h1>
+
                     <p className="mt-2 text-sm text-gray-600">
-                        Centralized Bank Management System
+                        Secure Banking Portal
                     </p>
                 </div>
 
                 {error && (
-                    <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+                    <div className="mb-5 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-600">
                         {error}
                     </div>
                 )}
 
-                <form className="space-y-6" onSubmit={handleSubmit}>
-                    <div className="space-y-4">
-                        <div>
-                            <label className="mb-1 block text-sm font-semibold text-gray-700">
-                                Username
-                            </label>
+                <form
+                    onSubmit={handleSubmit}
+                    className="space-y-5"
+                >
+                    <div>
+                        <label className="mb-2 block text-sm font-semibold text-gray-700">
+                            Phone Number
+                        </label>
 
-                            <input
-                                type="text"
-                                required
-                                value={username}
-                                onChange={(e) =>
-                                    setUsername(e.target.value)
-                                }
-                                className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                placeholder="Enter username"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="mb-1 block text-sm font-semibold text-gray-700">
-                                Password
-                            </label>
-
-                            <input
-                                type="password"
-                                required
-                                value={password}
-                                onChange={(e) =>
-                                    setPassword(e.target.value)
-                                }
-                                className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                placeholder="••••••••"
-                            />
-                        </div>
+                        <input
+                            type="text"
+                            required
+                            value={phone}
+                            onChange={(e) =>
+                                setPhone(e.target.value)
+                            }
+                            placeholder="Enter phone number"
+                            className="w-full rounded-lg border border-gray-300 px-4 py-3 transition focus:border-green-700 focus:outline-none focus:ring-2 focus:ring-green-200"
+                        />
                     </div>
 
-                    <Link
-                        href="/signup"
-                        className="flex w-full justify-center rounded-md border border-blue-600 bg-white py-2 px-4 text-sm font-medium text-blue-600 hover:bg-blue-50"
-                    >
-                        Sign Up
-                    </Link>
+                    <div>
+                        <label className="mb-2 block text-sm font-semibold text-gray-700">
+                            Password
+                        </label>
+
+                        <input
+                            type="password"
+                            required
+                            value={password}
+                            onChange={(e) =>
+                                setPassword(e.target.value)
+                            }
+                            placeholder="Enter password"
+                            className="w-full rounded-lg border border-gray-300 px-4 py-3 transition focus:border-green-700 focus:outline-none focus:ring-2 focus:ring-green-200"
+                        />
+                    </div>
 
                     <button
                         type="submit"
                         disabled={submitting}
-                        className="w-full rounded-md bg-blue-600 py-2 text-white hover:bg-blue-700 disabled:bg-blue-400"
+                        className="w-full rounded-lg bg-green-900 py-3 font-semibold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:bg-green-600"
                     >
                         {submitting
-                            ? 'Authenticating credentials...'
+                            ? 'Signing In...'
                             : 'Sign In'}
                     </button>
                 </form>
+
+                <div className="my-6 flex items-center">
+                    <div className="h-px flex-1 bg-gray-300"></div>
+                    <span className="px-3 text-sm text-gray-500">
+                        OR
+                    </span>
+                    <div className="h-px flex-1 bg-gray-300"></div>
+                </div>
+
+                <Link
+                    href="/signup"
+                    className="block w-full rounded-lg border-2 border-green-900 py-3 text-center font-semibold text-green-900 transition hover:bg-green-900 hover:text-white"
+                >
+                    Create New Account
+                </Link>
             </div>
         </div>
     );

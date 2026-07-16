@@ -1,75 +1,108 @@
 'use client';
 
-import { useState, useEffect, createContext, useContext } from 'react';
+import {
+    createContext,
+    useContext,
+    useEffect,
+    useState,
+} from 'react';
 import { useRouter } from 'next/navigation';
-import api from '../lib/api';
+import authService from '../services/authService';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+
     const router = useRouter();
 
     useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        const token = localStorage.getItem('token');
+        const initializeAuth = async () => {
+            const token = localStorage.getItem('token');
 
-        if (storedUser && token) {
-            setUser(JSON.parse(storedUser));
-        }
+            if (!token) {
+                setLoading(false);
+                return;
+            }
 
-        setLoading(false);
+            try {
+                const userData = await authService.getProfile();
+
+                setUser(userData);
+                localStorage.setItem(
+                    'user',
+                    JSON.stringify(userData)
+                );
+            } catch (error) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                setUser(null);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        initializeAuth();
     }, []);
 
-    const login = async (username, password) => {
+    const login = async (phone, password) => {
         try {
-            const response = await api.post('/auth/login', {
-                username,
-                password,
-            });
+            const data = await authService.login(
+                phone,
+                password
+            );
 
-            const { token, user: userData } = response.data;
+            localStorage.setItem('token', data.token);
+            localStorage.setItem(
+                'user',
+                JSON.stringify(data.user)
+            );
 
-            localStorage.setItem('token', token);
-            localStorage.setItem('user', JSON.stringify(userData));
+            setUser(data.user);
 
-            setUser(userData);
+            switch (data.user.role) {
+                case 'Admin':
+                    router.replace('/admin');
+                    break;
 
-            if (userData.role === 'Admin') {
-                router.push('/admin');
-            } else if (userData.role === 'Employee') {
-                router.push('/employee');
-            } else {
-                router.push('/customer');
+                case 'Employee':
+                    router.replace('/employee');
+                    break;
+
+                default:
+                    router.replace('/');
             }
 
             return {
                 success: true,
-                message: 'Login successful.',
+                message: data.message,
             };
         } catch (error) {
             return {
                 success: false,
                 message:
                     error.response?.data?.message ||
-                    'Login sequence failed.',
+                    'Login failed.',
             };
         }
     };
 
-    const register = async (username, password) => {
+    const register = async (
+        username,
+        phone,
+        password
+    ) => {
         try {
-            const response = await api.post('/auth/register', {
+            const data = await authService.register(
                 username,
-                password,
-            });
+                phone,
+                password
+            );
 
             return {
                 success: true,
-                message:
-                    response.data.message ||
-                    'Account created successfully.',
+                message: data.message,
             };
         } catch (error) {
             return {
@@ -87,7 +120,25 @@ export const AuthProvider = ({ children }) => {
 
         setUser(null);
 
-        router.push('/login');
+        router.replace('/login');
+    };
+
+    const refreshUser = async () => {
+        try {
+            const userData =
+                await authService.getProfile();
+
+            setUser(userData);
+
+            localStorage.setItem(
+                'user',
+                JSON.stringify(userData)
+            );
+
+            return userData;
+        } catch (error) {
+            logout();
+        }
     };
 
     return (
@@ -98,6 +149,8 @@ export const AuthProvider = ({ children }) => {
                 login,
                 register,
                 logout,
+                refreshUser,
+                setUser,
             }}
         >
             {children}
