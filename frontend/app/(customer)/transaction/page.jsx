@@ -27,7 +27,17 @@ function TransactionPageInner() {
     const [amount, setAmount] = useState('');
     const [targetAccount, setTargetAccount] = useState('');
     const [submitting, setSubmitting] = useState(false);
-    const [message, setMessage] = useState({ type: '', text: '' });
+
+    // Toast Popup System State
+    const [toast, setToast] = useState({ show: false, type: '', text: '' });
+
+    // Function to trigger the floating notification
+    const popNotification = (type, text) => {
+        setToast({ show: true, type, text });
+        setTimeout(() => {
+            setToast((prev) => ({ ...prev, show: false }));
+        }, 4000);
+    };
 
     const loadData = async () => {
         setLoadingData(true);
@@ -46,7 +56,6 @@ function TransactionPageInner() {
     };
 
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         loadData();
     }, []);
 
@@ -55,18 +64,25 @@ function TransactionPageInner() {
         setTargetAccount('');
     };
 
+    // Helper to get formatted dynamic name for notifications
+    const getOperationName = (currentTab) => {
+        if (currentTab === 'deposit') return 'Deposit';
+        if (currentTab === 'withdraw') return 'Withdrawal';
+        return 'Transfer';
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setMessage({ type: '', text: '' });
+        const operationName = getOperationName(tab);
 
         if (!account?.account_number) {
-            setMessage({ type: 'error', text: 'No active account found on your profile.' });
+            popNotification('error', `${operationName} failed: No active account profile found.`);
             return;
         }
 
         const numericAmount = parseFloat(amount);
         if (!numericAmount || numericAmount <= 0) {
-            setMessage({ type: 'error', text: 'Enter a valid amount greater than 0.' });
+            popNotification('error', `${operationName} failed: Invalid amount entered.`);
             return;
         }
 
@@ -74,23 +90,23 @@ function TransactionPageInner() {
         try {
             if (tab === 'deposit') {
                 await transactionService.deposit(account.account_number, numericAmount);
-                setMessage({ type: 'success', text: 'Deposit completed successfully!' });
+                popNotification('success', 'Deposit successful!');
             } else if (tab === 'withdraw') {
                 if (numericAmount > parseFloat(account.balance || 0)) {
-                    setMessage({ type: 'error', text: 'Withdrawal amount exceeds your available balance.' });
+                    popNotification('error', 'Withdrawal failed: Insufficient ledger balance.');
                     setSubmitting(false);
                     return;
                 }
                 await transactionService.withdraw(account.account_number, numericAmount);
-                setMessage({ type: 'success', text: 'Withdrawal completed successfully!' });
+                popNotification('success', 'Withdrawal successful!');
             } else {
                 if (!targetAccount.trim()) {
-                    setMessage({ type: 'error', text: 'Enter a target account number.' });
+                    popNotification('error', 'Transfer failed: Target account sequence required.');
                     setSubmitting(false);
                     return;
                 }
                 if (targetAccount.trim() === account.account_number) {
-                    setMessage({ type: 'error', text: 'You cannot transfer to your own account.' });
+                    popNotification('error', 'Transfer failed: Cannot route funds to yourself.');
                     setSubmitting(false);
                     return;
                 }
@@ -99,77 +115,107 @@ function TransactionPageInner() {
                     targetAccount.trim(),
                     numericAmount
                 );
-                setMessage({ type: 'success', text: 'Transfer completed successfully!' });
+                popNotification('success', 'Transfer successful!');
             }
 
             resetForm();
             loadData();
         } catch (error) {
-            setMessage({
-                type: 'error',
-                text: error.response?.data?.message || 'Transaction failed. Please try again.',
-            });
+            const serverMessage = error.response?.data?.message || 'Server connection issue.';
+            popNotification('error', `${operationName} failed: ${serverMessage}`);
         } finally {
             setSubmitting(false);
         }
     };
 
     return (
-        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-            <h1 className="text-2xl font-bold text-green-950">Transactions</h1>
-            <p className="mt-1 text-sm text-gray-500">
-                Deposit, withdraw, or transfer funds from your account.
-            </p>
+        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 relative">
+            
+            {/* DYNAMIC FLOATING NOTIFICATION POPUP */}
+            <div
+                className={`fixed top-6 right-6 z-50 max-w-sm w-full rounded-xl border p-4 shadow-2xl backdrop-blur-md transition-all duration-300 transform ${
+                    toast.show 
+                        ? 'translate-y-0 opacity-100 scale-100' 
+                        : '-translate-y-4 opacity-0 scale-95 pointer-events-none'
+                } ${
+                    toast.type === 'success'
+                        ? 'border-emerald-500/30 bg-white/95 text-emerald-900 !shadow-[0_10px_30px_rgba(16,185,129,0.15)]'
+                        : 'border-red-500/30 bg-white/95 text-red-900 !shadow-[0_10px_30px_rgba(239,68,68,0.15)]'
+                }`}
+            >
+                <div className="flex items-start gap-3">
+                    <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                        toast.type === 'success' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+                    }`}>
+                        {toast.type === 'success' ? '✓' : '✕'}
+                    </div>
+                    <div className="flex-1">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-gray-900">
+                            System Node Alert
+                        </h4>
+                        <p className="mt-1 text-xs font-semibold text-gray-600 leading-relaxed">
+                            {toast.text}
+                        </p>
+                    </div>
+                    <button 
+                        type="button"
+                        onClick={() => setToast((prev) => ({ ...prev, show: false }))} 
+                        className="text-gray-400 hover:text-gray-600 font-bold text-xs"
+                    >
+                        ✕
+                    </button>
+                </div>
+            </div>
+
+            <div className="mb-6">
+                <h1 className="text-2xl font-extrabold tracking-tight text-green-950 sm:text-3xl">Ledger Transactions</h1>
+                <p className="mt-1.5 text-sm font-medium text-gray-500">
+                    Securely execute asset adjustments, withdrawals, or configure external balance transfers.
+                </p>
+            </div>
 
             <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-                {/* Form panel */}
-                <div className="rounded-2xl bg-white p-6 shadow lg:col-span-1">
-                    <div className="mb-5 flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3">
-                        <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                            Balance
+                {/* Form configuration panel */}
+                <div className="h-fit rounded-2xl border border-gray-100 bg-white p-6 transition-all duration-300 !shadow-[0_4px_20px_rgba(0,0,0,0.05)] hover:border-emerald-500/20 lg:col-span-1">
+                    <div className="mb-5 flex items-center justify-between rounded-xl bg-gray-50/70 border border-gray-100/50 px-4 py-3">
+                        <span className="text-xs font-bold uppercase tracking-wider text-gray-400">
+                            Available Balance
                         </span>
-                        <span className="font-mono text-sm font-bold text-green-900">
-                            ${account ? formatMoney(account.balance) : '0.00'}
-                        </span>
+                        {loadingData ? (
+                            <div className="h-5 w-20 animate-pulse rounded bg-gray-200" />
+                        ) : (
+                            <span className="font-mono text-sm font-black text-green-950 flex items-center gap-0.5">
+                                <span className="text-emerald-700 font-bold">৳</span>
+                                {account ? formatMoney(account.balance) : '0.00'}
+                            </span>
+                        )}
                     </div>
 
-                    {/* Tabs */}
-                    <div className="mb-5 grid grid-cols-3 gap-1 rounded-lg bg-gray-100 p-1">
+                    {/* Operational tab toggles */}
+                    <div className="mb-5 grid grid-cols-3 gap-1 rounded-xl bg-gray-100 p-1">
                         {TABS.map((t) => (
                             <button
                                 key={t.key}
+                                type="button"
                                 onClick={() => {
                                     setTab(t.key);
-                                    setMessage({ type: '', text: '' });
                                     resetForm();
                                 }}
-                                className={`rounded-md py-2 text-xs font-semibold transition ${
+                                className={`rounded-lg py-2.5 text-xs font-bold transition-all duration-200 ${
                                     tab === t.key
-                                        ? 'bg-green-900 text-white shadow'
-                                        : 'text-gray-600 hover:bg-white'
+                                        ? 'bg-green-900 text-white shadow-sm'
+                                        : 'text-gray-600 hover:bg-white/60 hover:text-gray-900'
                                 }`}
                             >
-                                {t.icon} {t.label}
+                                <span className="mr-1">{t.icon}</span> {t.label}
                             </button>
                         ))}
                     </div>
 
-                    {message.text && (
-                        <div
-                            className={`mb-4 rounded-lg border px-3 py-2 text-xs font-semibold ${
-                                message.type === 'success'
-                                    ? 'border-green-300 bg-green-50 text-green-700'
-                                    : 'border-red-300 bg-red-50 text-red-600'
-                            }`}
-                        >
-                            {message.text}
-                        </div>
-                    )}
-
                     <form onSubmit={handleSubmit} className="space-y-4">
                         {tab === 'transfer' && (
-                            <div>
-                                <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-gray-500">
+                            <div className="space-y-1.5">
+                                <label className="block text-xs font-bold uppercase tracking-wider text-gray-400">
                                     Target Account Number
                                 </label>
                                 <input
@@ -177,92 +223,96 @@ function TransactionPageInner() {
                                     required
                                     value={targetAccount}
                                     onChange={(e) => setTargetAccount(e.target.value)}
-                                    placeholder="Recipient account number"
-                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 font-mono text-sm transition focus:border-green-700 focus:outline-none focus:ring-2 focus:ring-green-200"
+                                    placeholder="Recipient digital asset key"
+                                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 font-mono text-xs transition placeholder:text-gray-300 focus:border-green-700 focus:outline-none focus:ring-4 focus:ring-green-100"
                                 />
                             </div>
                         )}
 
-                        <div>
-                            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-gray-500">
-                                Amount ($)
+                        <div className="space-y-1.5">
+                            <label className="block text-xs font-bold uppercase tracking-wider text-gray-400">
+                                Amount (৳)
                             </label>
-                            <input
-                                type="number"
-                                required
-                                min="0.01"
-                                step="0.01"
-                                value={amount}
-                                onChange={(e) => setAmount(e.target.value)}
-                                placeholder="0.00"
-                                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm transition focus:border-green-700 focus:outline-none focus:ring-2 focus:ring-green-200"
-                            />
+                            <div className="relative rounded-xl shadow-sm">
+                                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
+                                    <span className="text-xs font-bold text-gray-400">৳</span>
+                                </div>
+                                <input
+                                    type="number"
+                                    required
+                                    min="0"
+                                    step="500"
+                                    value={amount}
+                                    onChange={(e) => setAmount(e.target.value)}
+                                    placeholder="0.00"
+                                    className="w-full rounded-xl border border-gray-200 py-2.5 pl-8 pr-4 text-xs font-semibold text-gray-900 transition placeholder:text-gray-300 focus:border-green-700 focus:outline-none focus:ring-4 focus:ring-green-100"
+                                />
+                            </div>
                         </div>
 
                         <button
                             type="submit"
                             disabled={submitting || !account?.account_number}
-                            className="w-full rounded-lg bg-green-900 py-3 text-sm font-semibold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:bg-green-600"
+                            className="w-full mt-2 rounded-xl bg-green-900 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-md transition-all duration-200 hover:bg-green-800 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none"
                         >
                             {submitting
-                                ? 'Processing...'
-                                : `Confirm ${TABS.find((t) => t.key === tab)?.label}`}
+                                ? 'Processing node sync...'
+                                : `Confirm Asset ${TABS.find((t) => t.key === tab)?.label}`}
                         </button>
                     </form>
                 </div>
 
-                {/* History */}
-                <div className="rounded-2xl bg-white p-6 shadow lg:col-span-2">
-                    <h3 className="mb-4 text-lg font-bold text-gray-900">
-                        Transaction History
+                {/* Audit statement history block */}
+                <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm lg:col-span-2">
+                    <h3 className="mb-4 text-md font-bold text-gray-900 tracking-tight">
+                        Node Transaction History
                     </h3>
-                    <div className="max-h-[560px] overflow-y-auto">
-                        <table className="w-full text-left text-sm">
-                            <thead className="sticky top-0 bg-white">
-                                <tr className="border-b border-gray-200 text-gray-400">
-                                    <th className="pb-3 font-medium">Type</th>
-                                    <th className="pb-3 font-medium">Amount</th>
-                                    <th className="pb-3 font-medium">Date</th>
+                    <div className="max-h-[560px] overflow-y-auto custom-scrollbar">
+                        <table className="w-full text-left text-xs">
+                            <thead className="sticky top-0 bg-white z-10">
+                                <tr className="border-b border-gray-100 text-xs font-bold uppercase tracking-wider text-gray-400">
+                                    <th className="pb-3 font-semibold">Classification Type</th>
+                                    <th className="pb-3 font-semibold text-right">Settled Amount</th>
+                                    <th className="pb-3 font-semibold text-right">Timestamp</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y divide-gray-50 font-medium">
                                 {loadingData ? (
-                                    <tr>
-                                        <td colSpan="3" className="py-6 text-center text-gray-400">
-                                            Loading...
-                                        </td>
-                                    </tr>
+                                    [...Array(5)].map((_, idx) => (
+                                        <tr key={idx} className="animate-pulse">
+                                            <td className="py-4"><div className="h-4 w-16 rounded bg-gray-100" /></td>
+                                            <td className="py-4 text-right"><div className="h-4 w-20 rounded bg-gray-100 ml-auto" /></td>
+                                            <td className="py-4 text-right"><div className="h-4 w-24 rounded bg-gray-100 ml-auto" /></td>
+                                        </tr>
+                                    ))
                                 ) : transactions.length === 0 ? (
                                     <tr>
-                                        <td colSpan="3" className="py-6 text-center text-gray-400">
-                                            No transactions yet.
+                                        <td colSpan="3" className="py-12 text-center text-gray-400 font-medium">
+                                            No systemic logs mapped to this micro-ledger node yet.
                                         </td>
                                     </tr>
                                 ) : (
                                     transactions.map((tx, i) => (
-                                        <tr key={tx.id || i} className="text-gray-700">
-                                            <td className="py-3">
+                                        <tr key={tx.id || i} className="text-gray-700 hover:bg-gray-50/50 transition-colors">
+                                            <td className="py-3.5">
                                                 <span
-                                                    className={`inline-block rounded px-2 py-0.5 text-xs font-semibold ${
+                                                    className={`inline-block rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider border ${
                                                         tx.type === 'Deposit'
-                                                            ? 'bg-green-100 text-green-800'
-                                                            : 'bg-amber-100 text-amber-800'
+                                                            ? 'bg-green-50 text-green-700 border-green-200/40'
+                                                            : 'bg-amber-50 text-amber-700 border-amber-200/40'
                                                     }`}
                                                 >
                                                     {tx.type}
                                                 </span>
                                             </td>
                                             <td
-                                                className={`py-3 font-semibold ${
-                                                    tx.type === 'Deposit'
-                                                        ? 'text-green-600'
-                                                        : 'text-amber-600'
+                                                className={`py-3.5 text-right font-bold text-sm ${
+                                                    tx.type === 'Deposit' ? 'text-green-600' : 'text-amber-600'
                                                 }`}
                                             >
-                                                {tx.type === 'Deposit' ? '+' : '-'}$
-                                                {formatMoney(tx.amount)}
+                                                {tx.type === 'Deposit' ? '+' : '-'} ৳{formatMoney(tx.amount)}
                                             </td>
-                                            <td className="py-3 font-mono text-xs text-gray-400">
+                                            <td className="py-3.5 text-right font-mono text-gray-400">
                                                 {formatDate(tx.created_at)}
                                             </td>
                                         </tr>

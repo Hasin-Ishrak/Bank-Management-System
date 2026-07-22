@@ -1,26 +1,174 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Core palette — deep navy trust + emerald accent */
+  --color-bg: #f7f9fc;
+  --color-surface: #ffffff;
+  --color-primary: #0b3d91;      /* deep banking blue */
+  --color-primary-dark: #072a66;
+  --color-accent: #10b981;       /* emerald for positive actions/success */
+  --color-danger: #dc2626;
+  --color-text: #101828;
+  --color-text-muted: #667085;
+  --color-border: #e4e7ec;
+
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow-md: 0 4px 12px rgba(16, 24, 40, 0.08);
+  --shadow-lg: 0 12px 24px rgba(16, 24, 40, 0.12);
+
+  --radius: 12px;
+  --transition: all 0.2s ease;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Card / panel style used across dashboard, statements, etc. */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  border-color: var(--color-primary);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Primary button */
+.btn-primary {
+  background: var(--color-primary);
+  color: white;
+  border-radius: 8px;
+  padding: 0.65rem 1.25rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+}
+
+.btn-primary:hover {
+  background: var(--color-primary-dark);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+/* Secondary / outline button */
+.btn-secondary {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  border-radius: 8px;
+  padding: 0.65rem 1.25rem;
+  transition: var(--transition);
+}
+
+.btn-secondary:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: rgba(11, 61, 145, 0.04);
+}
+
+/* Input fields */
+.input {
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+  transition: var(--transition);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(11, 61, 145, 0.12);
+}
+
+/* Balance / stat card highlight */
+.stat-card {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  color: white;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+}
+@keyframes heartbeat {
+  0%   { transform: scale(1); }
+  20%  { transform: scale(1.15); }
+  40%  { transform: scale(1); }
+  60%  { transform: scale(1.1); }
+  80%  { transform: scale(1); }
+  100% { transform: scale(1); }
+}
+
+.heartbeat-hover {
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.heartbeat-hover:hover {
+  animation: heartbeat 1s ease-in-out infinite;
+  box-shadow: 0 0 16px 4px rgba(139, 92, 246, 0.45),
+              0 0 4px 1px rgba(139, 92, 246, 0.6);
+  cursor: pointer;
+}
+.hover-grow {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-grow:hover {
+  transform: scale(1.06);
+}
+
+.hover-grow:active {
+  transform: scale(0.97);
+}
+/* Accent / positive-action button — used for steppers, confirmations, etc. */
+.btn-accent {
+  background: transparent;
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent);
+  border-radius: 8px;
+  transition: var(--transition);
+}
+
+.btn-accent:hover {
+  background: var(--color-accent);
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.btn-accent:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.btn-accent:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+  background: transparent;
+  color: var(--color-accent);
+}
+/* Navbar-matched gradient button */
+.btn-navbar-theme {
+  background: linear-gradient(to right, #052e16, #14532d, #064e3b); /* matches green-950, green-900, emerald-900 */
+  color: white;
+  border-radius: 8px;
+  padding: 0.65rem 1.25rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+}
+
+.btn-navbar-theme:hover {
+  /* Brightens slightly on hover by adjusting brightness instead of handling complex gradient shifts */
+  filter: brightness(1.15); 
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.btn-navbar-theme:active {
+  transform: translateY(0);
+  box-shadow: none;
 }
