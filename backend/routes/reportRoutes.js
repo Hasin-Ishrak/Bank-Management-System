@@ -5,7 +5,7 @@ const reportController = require("../controllers/reportController");
 const {
   verifyToken,
   authorizeRoles,
-} = require("../middleware/auth");
+} = require("../middlewares/authMiddleware"); // Updated from "auth" to "authMiddleware"
 
 // Customer
 router.post(
@@ -40,7 +40,7 @@ router.put(
 router.get(
   "/system",
   verifyToken,
-  authorizeRoles("Admin"),
+  authorizeRoles("Admin", "Employee"),
   reportController.getSystemReports
 );
 

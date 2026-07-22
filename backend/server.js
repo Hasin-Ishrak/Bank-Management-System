@@ -17,9 +17,9 @@ app.use(morgan('dev')); // Logger middleware for cleanly tracking incoming API r
 
 // Routes Mapping
 app.use('/api/auth', authRoutes);
-app.use('/api/account', accountRoutes);
-app.use('/api/transaction', transactionRoutes);
-app.use('/api/report', reportRoutes);
+app.use('/api/accounts', accountRoutes);
+app.use('/api/transactions', transactionRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Simple root status indicator endpoint
 app.get('/', (req, res) => {

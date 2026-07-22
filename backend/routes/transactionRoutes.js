@@ -5,7 +5,7 @@ const transactionController = require("../controllers/transactionController");
 const {
   verifyToken,
   authorizeRoles,
-} = require("../middleware/auth");
+} = require("../middlewares/authMiddleware"); // Updated from "auth" to "authMiddleware"
 
 // Customer/Admin/Employee
 router.post(
